@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Smart Farm Power Control{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <div class="row align-items-center py-5">
+        <div class="col-md-6">
+            <h1 class="display-4 fw-bold mb-3">Smart Farm Power Control</h1>
+            <p class="lead mb-4">Monitor, control, and optimize your farm's electricity usage. Save money while improving efficiency with our IoT-powered solution.</p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg px-4 me-md-2">Get Started</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg px-4">Log In</a>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <img src="{{ url_for('static', filename='img/hero-image.jpg') }}" alt="Smart Farm Power Control" class="img-fluid rounded shadow">
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="py-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Key Features</h2>
+            <p class="lead text-muted">Everything you need to manage your farm's power usage</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-tachometer-alt fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="card-title">Real-time Monitoring</h4>
+                        <p class="card-text">Track power usage across all farm equipment in real-time. See exactly how much each device is consuming.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-mobile-alt fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="card-title">Mobile Control</h4>
+                        <p class="card-text">Control your farm equipment from anywhere using SMS, USSD, or the web dashboard on any device.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-calendar-alt fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="card-title">Smart Scheduling</h4>
+                        <p class="card-text">Create automated schedules to power devices on and off based on time, conditions, or power usage patterns.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-bell fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="card-title">Notifications & Alerts</h4>
+                        <p class="card-text">Receive instant alerts for high power usage, device failures, or other important events via SMS or app.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-chart-line fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="card-title">Analytics & Reports</h4>
+                        <p class="card-text">Detailed analytics and insights to help you understand and optimize your farm's power consumption.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-plug fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="card-title">IoT Integration</h4>
+                        <p class="card-text">Easily connect to your existing equipment with our sensor devices. No complex setup required.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <div class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">How It Works</h2>
+                <p class="lead text-muted">Simple steps to get your farm's power under control</p>
+            </div>
+            <div class="row align-items-center mb-5">
+                <div class="col-md-6 order-md-2">
+                    <h3>1. Install Sensors</h3>
+                    <p>Attach our power monitoring sensors to your farm equipment. Each sensor connects wirelessly to the central system.</p>
+                    <p>The sensors are weatherproof, durable, and designed specifically for agricultural environments.</p>
+                </div>
+                <div class="col-md-6 order-md-1">
+                    <img src="{{ url_for('static', filename='img/install-sensors.jpg') }}" alt="Install Sensors" class="img-fluid rounded shadow">
+                </div>
+            </div>
+            <div class="row align-items-center mb-5">
+                <div class="col-md-6">
+                    <h3>2. Connect to Dashboard</h3>
+                    <p>Access your personalized web dashboard to see all connected devices and their power status.</p>
+                    <p>You can monitor usage, set up alerts, and control devices from any web browser or mobile phone.</p>
+                </div>
+                <div class="col-md-6">
+                    <img src="{{ url_for('static', filename='img/dashboard.jpg') }}" alt="Connect to Dashboard" class="img-fluid rounded shadow">
+                </div>
+            </div>
+            <div class="row align-items-center">
+                <div class="col-md-6 order-md-2">
+                    <h3>3. Optimize Your Farm</h3>
+                    <p>Use the insights and controls to optimize your farm's power usage. Create schedules, receive alerts, and control equipment remotely.</p>
+                    <p>Watch your electricity bills decrease as you make smarter power decisions.</p>
+                </div>
+                <div class="col-md-6 order-md-1">
+                    <img src="{{ url_for('static', filename='img/optimize.jpg') }}" alt="Optimize Your Farm" class="img-fluid rounded shadow">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonials Section -->
+    <div class="py-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">What Farmers Are Saying</h2>
+            <p class="lead text-muted">Success stories from farms like yours</p>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3 text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <p class="card-text">"We've reduced our electricity costs by 32% since installing the Smart Farm Power Control system. The ability to schedule our irrigation pumps based on peak/off-peak hours has been a game-changer."</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">JD</div>
+                            <div>
+                                <h6 class="mb-0">John Deere</h6>
+                                <small class="text-muted">Dairy Farmer, Wisconsin</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3 text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <p class="card-text">"The alerts feature saved our greenhouse during a power surge. The system detected the abnormal usage and notified me immediately, allowing me to prevent equipment damage."</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">SM</div>
+                            <div>
+                                <h6 class="mb-0">Sarah Miller</h6>
+                                <small class="text-muted">Greenhouse Operator, California</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3 text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <p class="card-text">"Being able to control our farm equipment via SMS has been incredibly convenient. Even when I'm in areas with poor internet connectivity, I can still manage our power usage effectively."</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">RJ</div>
+                            <div>
+                                <h6 class="mb-0">Robert Johnson</h6>
+                                <small class="text-muted">Poultry Farmer, Georgia</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="py-5 bg-primary text-white">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="fw-bold mb-3">Ready to optimize your farm's power usage?</h2>
+                    <p class="lead mb-md-0">Start saving money and improving efficiency today.</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg px-4">Get Started</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,283 @@
+/* Dashboard-specific styling */
+
+/* Overview Cards */
+.overview-card {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.overview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.overview-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 1rem 0;
+}
+
+/* Chart Containers */
+.chart-card {
+    height: 100%;
+}
+
+.chart-container {
+    position: relative;
+    height: 100%;
+    min-height: 300px;
+}
+
+/* Device Status Table */
+.device-table th {
+    font-weight: 600;
+    color: #495057;
+}
+
+.device-table td {
+    vertical-align: middle;
+}
+
+.status-badge {
+    padding: 0.4em 0.6em;
+    font-size: 0.75em;
+    border-radius: 50rem;
+}
+
+/* Power Usage Display */
+.power-current {
+    color: #0d6efd;
+}
+
+.power-warning {
+    color: #ffc107;
+}
+
+.power-critical {
+    color: #dc3545;
+}
+
+/* Alert/Notification List */
+.alert-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.alert-item {
+    border-left: 4px solid transparent;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    background-color: #fff;
+    border-radius: 0.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+}
+
+.alert-item:hover {
+    transform: translateX(5px);
+}
+
+.alert-item.alert-critical {
+    border-left-color: #dc3545;
+}
+
+.alert-item.alert-warning {
+    border-left-color: #ffc107;
+}
+
+.alert-item.alert-info {
+    border-left-color: #0dcaf0;
+}
+
+.alert-time {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Power Usage History */
+.usage-trend-up {
+    color: #dc3545;
+}
+
+.usage-trend-down {
+    color: #198754;
+}
+
+.usage-trend-neutral {
+    color: #6c757d;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #0d6efd;
+}
+
+input:focus + .toggle-slider {
+    box-shadow: 0 0 1px #0d6efd;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+/* Dashboard Stats Card */
+.stats-card {
+    background-color: #fff;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.stats-card-title {
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.stats-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0d6efd;
+}
+
+/* Device Control Buttons */
+.device-control-btn {
+    min-width: 100px;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+/* Power Usage Chart */
+.power-chart-legend {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-right: 1.5rem;
+    font-size: 0.875rem;
+}
+
+.legend-color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 5px;
+    border-radius: 2px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 991.98px) {
+    .overview-card .display-1 {
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .overview-card .display-1 {
+        font-size: 2.5rem;
+    }
+
+    .chart-container {
+        min-height: 250px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .overview-card .display-1 {
+        font-size: 2rem;
+    }
+
+    .chart-container {
+        min-height: 200px;
+    }
+
+    .device-control-btn {
+        min-width: auto;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Animation for power status */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.power-pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Custom scrollbar for tables */
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}

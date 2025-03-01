@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Smart Farm Power Control{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center py-5">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0">Create Your Account</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.register') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" required autofocus>
+                                <small class="text-muted">Choose a unique username for your account</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number" required>
+                                <small class="text-muted">Used for SMS notifications and login</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="farm_name" class="form-label">Farm Name (Optional)</label>
+                            <input type="text" class="form-control" id="farm_name" name="farm_name">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <small class="text-muted">Must be at least 8 characters long</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="confirm_password" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            </div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="agree_terms" name="agree_terms" required>
+                            <label class="form-check-label" for="agree_terms">
+                                I agree to the <a href="{{ url_for('main.terms') }}" target="_blank">Terms of Service</a> and <a href="{{ url_for('main.privacy') }}" target="_blank">Privacy Policy</a>
+                            </label>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
+                        </div>
+                    </form>
+                    <hr class="my-4">
+                    <div class="text-center">
+                        <p class="mb-2">Already have an account?</p>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">Login</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body p-4">
+                    <h5>Why Join Smart Farm Power Control?</h5>
+                    <ul class="mb-0">
+                        <li>Monitor your farm's power usage in real-time</li>
+                        <li>Reduce energy costs by optimizing power consumption</li>
+                        <li>Receive alerts for unusual power usage patterns</li>
+                        <li>Control farm equipment remotely via SMS or web dashboard</li>
+                        <li>Access detailed analytics and reports on energy consumption</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

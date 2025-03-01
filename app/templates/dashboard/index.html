@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Smart Farm Power Control{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="row mb-3">
+        <div class="col">
+            <h1 class="mb-3">Farm Power Dashboard</h1>
+            <p>Welcome, {{ current_user.full_name }}! Here's an overview of your farm's power usage.</p>
+        </div>
+    </div>
+
+    <!-- Power Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Current Power</h5>
+                    <div class="display-1 fw-bold text-primary" id="current-power">--</div>
+                    <p class="text-muted">Watts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Today's Energy</h5>
+                    <div class="display-1 fw-bold text-success" id="todays-energy">
+                        {% if today_summary %}
+                            {{ "%.2f"|format(today_summary.total_energy) }}
+                        {% else %}
+                            0.00
+                        {% endif %}
+                    </div>
+                    <p class="text-muted">kWh</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Estimated Cost</h5>
+                    <div class="display-1 fw-bold text-danger" id="estimated-cost">
+                        {% if today_summary %}
+                            ${{ "%.2f"|format(today_summary.cost_estimate) }}
+                        {% else %}
+                            $0.00
+                        {% endif %}
+                    </div>
+                    <p class="text-muted">Today</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Devices and Power Chart -->
+    <div class="row mb-4">
+        <div class="col-lg-7 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Power Usage (Last 24 Hours)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="powerChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Active Devices</h5>
+                    <a href="{{ url_for('dashboard.devices') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Status</th>
+                                <th>Power</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="active-devices">
+                            {% for device in devices %}
+                                <tr id="device-row-{{ device.id }}">
+                                    <td>
+                                        <i class="fas fa-plug me-2"></i>{{ device.name }}
+                                    </td>
+                                    <td>
+                                    <span class="badge {% if device.status == 'online' %}bg-success{% elif device.status == 'offline' %}bg-secondary{% else %}bg-warning{% endif %}">
+                                        {{ device.status }}
+                                    </span>
+                                    </td>
+                                    <td>
+                                        <span class="power-usage">{{ "%.1f"|format(device.current_power) }} W</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm {% if device.power_state %}btn-danger{% else %}btn-success{% endif %} toggle-power"
+                                                data-device-id="{{ device.id }}"
+                                                data-current-state="{{ 'on' if device.power_state else 'off' }}">
+                                            {% if device.power_state %}
+                                                <i class="fas fa-power-off"></i> Off
+                                            {% else %}
+                                                <i class="fas fa-power-off"></i> On
+                                            {% endif %}
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No devices found. <a href="{{ url_for('dashboard.devices') }}">Add a device</a></td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Alerts and Top Consumers -->
+    <div class="row">
+        <div class="col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Alerts</h5>
+                    <a href="{{ url_for('dashboard.alerts') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for notification in notifications %}
+                            <div class="list-group-item list-group-item-action flex-column align-items-start">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">
+                                        {% if notification.notification_type == 'alert' %}
+                                            <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                                        {% elif notification.notification_type == 'warning' %}
+                                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                        {% else %}
+                                            <i class="fas fa-info-circle text-primary me-2"></i>
+                                        {% endif %}
+                                        {{ notification.title }}
+                                    </h6>
+                                    <small class="text-muted">{{ notification.timestamp.strftime('%H:%M, %b %d') }}</small>
+                                </div>
+                                <p class="mb-1">{{ notification.message }}</p>
+                            </div>
+                        {% else %}
+                            <div class="list-group-item">No recent alerts.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Top Power Consumers</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="consumersChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Power usage chart
+            const ctx = document.getElementById('powerChart').getContext('2d');
+            const powerChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [], // Will be populated with time labels
+                    datasets: [{
+                        label: 'Power Usage (W)',
+                        data: [], // Will be populated with power data
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Watts'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    }
+                }
+            });
+
+            // Top consumers chart
+            const consCtx = document.getElementById('consumersChart').getContext('2d');
+            const consumersChart = new Chart(consCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [], // Will be populated with device names
+                    datasets: [{
+                        data: [], // Will be populated with power consumption data
+                        backgroundColor: [
+                            '#3498db',
+                            '#e74c3c',
+                            '#2ecc71',
+                            '#f39c12',
+                            '#9b59b6'
+                        ],
+                        borderColor: 'transparent'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    return `${label}: ${value.toFixed(1)} W (${(value / context.dataset.total * 100).toFixed(1)}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Toggle power state
+            document.querySelectorAll('.toggle-power').forEach(button => {
+                button.addEventListener('click', function() {
+                    const deviceId = this.getAttribute('data-device-id');
+                    const currentState = this.getAttribute('data-current-state');
+                    const newState = currentState === 'on' ? 'off' : 'on';
+
+                    this.disabled = true;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                    // Send control command to the server
+                    fetch(`/dashboard/api/device/${deviceId}/control`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            command: 'power',
+                            value: newState === 'on'
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert(data.error);
+                                return;
+                            }
+
+                            // Update button
+                            this.setAttribute('data-current-state', newState);
+                            if (newState === 'on') {
+                                this.classList.remove('btn-success');
+                                this.classList.add('btn-danger');
+                                this.innerHTML = '<i class="fas fa-power-off"></i> Off';
+                            } else {
+                                this.classList.remove('btn-danger');
+                                this.classList.add('btn-success');
+                                this.innerHTML = '<i class="fas fa-power-off"></i> On';
+                            }
+
+                            // Update device status in the table
+                            const statusCell = document.querySelector(`#device-row-${deviceId} td:nth-child(2) span`);
+                            if (statusCell) {
+                                statusCell.textContent = data.status;
+                                statusCell.className = `badge ${data.status === 'online' ? 'bg-success' : (data.status === 'offline' ? 'bg-secondary' : 'bg-warning')}`;
+                            }
+
+                            this.disabled = false;
+
+                            // Refresh dashboard data
+                            fetchDashboardData();
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to control device. Please try again.');
+                            this.disabled = false;
+                            this.innerHTML = `<i class="fas fa-power-off"></i> ${currentState === 'on' ? 'Off' : 'On'}`;
+                        });
+                });
+            });
+
+            // Fetch dashboard data from API
+            function fetchDashboardData() {
+                fetch('/api/power/dashboard', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch dashboard data');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Update current power
+                        document.getElementById('current-power').textContent = data.current_power.total.toFixed(1);
+
+                        // Update device power readings
+                        data.current_power.devices.forEach(device => {
+                            const powerCell = document.querySelector(`#device-row-${device.id} td:nth-child(3) span`);
+                            if (powerCell) {
+                                powerCell.textContent = `${device.current_power.toFixed(1)} W`;
+                            }
+                        });
+
+                        // Update top consumers chart
+                        consumersChart.data.labels = data.current_power.devices.slice(0, 5).map(d => d.name);
+                        consumersChart.data.datasets[0].data = data.current_power.devices.slice(0, 5).map(d => d.current_power);
+                        consumersChart.data.datasets[0].total = data.current_power.total;
+                        consumersChart.update();
+
+                        // Fetch power history for the chart
+                        fetch('/api/power/readings?limit=24', {
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('token')
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(historyData => {
+                                // Sort by timestamp (ascending)
+                                historyData.readings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                                // Prepare data for chart
+                                const timestamps = historyData.readings.map(r => {
+                                    const date = new Date(r.timestamp);
+                                    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                });
+                                const powerValues = historyData.readings.map(r => r.power_usage);
+
+                                // Update power chart
+                                powerChart.data.labels = timestamps;
+                                powerChart.data.datasets[0].data = powerValues;
+                                powerChart.update();
+                            })
+                            .catch(error => console.error('Error fetching power history:', error));
+                    })
+                    .catch(error => console.error('Error fetching dashboard data:', error));
+            }
+
+            // Initial data fetch
+            fetchDashboardData();
+
+            // Refresh data every 30 seconds
+            setInterval(fetchDashboardData, 30000);
+        });
+    </script>
+{% endblock %}

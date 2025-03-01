@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts & Notifications - Smart Farm Power Control{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Alerts & Notifications</h1>
+            <p class="text-muted">View and manage alerts related to your farm power system.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group" role="group">
+                <button id="markAllRead" class="btn btn-outline-primary">
+                    <i class="fas fa-check-double"></i> Mark All as Read
+                </button>
+                <button id="clearAllNotifications" class="btn btn-outline-danger">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Notifications</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Filter
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                            <li><a class="dropdown-item filter-item active" href="#" data-filter="all">All</a></li>
+                            <li><a class="dropdown-item filter-item" href="#" data-filter="unread">Unread Only</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item filter-item" href="#" data-filter="alert">Critical Alerts</a></li>
+                            <li><a class="dropdown-item filter-item" href="#" data-filter="warning">Warnings</a></li>
+                            <li><a class="dropdown-item filter-item" href="#" data-filter="info">Information</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="notifications-list">
+                        {% for notification in notifications %}
+                            <div class="list-group-item list-group-item-action notification-item {% if not notification.is_read %}notification-unread{% endif %} notification-{{ notification.notification_type }}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">
+                                        {% if notification.notification_type == 'alert' %}
+                                            <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                                        {% elif notification.notification_type == 'warning' %}
+                                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                        {% else %}
+                                            <i class="fas fa-info-circle text-primary me-2"></i>
+                                        {% endif %}
+                                        {{ notification.title }}
+                                    </h5>
+                                    <small class="text-muted">{{ notification.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                                <p class="mb-2">{{ notification.message }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small>
+                                        {% if notification.device_id %}
+                                            <a href="{{ url_for('dashboard.devices') }}#device-{{ notification.device_id }}" class="text-decoration-none">View Device</a>
+                                        {% endif %}
+                                    </small>
+                                    <div class="btn-group btn-group-sm">
+                                        {% if not notification.is_read %}
+                                            <button class="btn btn-outline-primary btn-sm mark-read" data-notification-id="{{ notification.id }}">
+                                                <i class="fas fa-check"></i> Mark as Read
+                                            </button>
+                                        {% endif %}
+                                        <button class="btn btn-outline-danger btn-sm delete-notification" data-notification-id="{{ notification.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="list-group-item text-center py-5">
+                                <i class="fas fa-bell fa-3x mb-3 text-muted"></i>
+                                <h5>No notifications found</h5>
+                                <p class="text-muted">You're all caught up! We'll notify you when something needs your attention.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if pagination.pages > 1 %}
+                    <div class="card-footer">
+                        <nav aria-label="Notification pagination">
+                            <ul class="pagination justify-content-center mb-0">
+                                <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                                    <a class="page-link" href="{{ url_for('dashboard.alerts', page=pagination.prev_num) if pagination.has_prev else '#' }}">Previous</a>
+                                </li>
+
+                                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                    {% if page_num %}
+                                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                            <a class="page-link" href="{{ url_for('dashboard.alerts', page=page_num) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                <li class="page-item {% if pagination.page == pagination.pages %}disabled{% endif %}">
+                                    <a class="page-link" href="{{ url_for('dashboard.alerts', page=pagination.next_num) if pagination.has_next else '#' }}">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings Card -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Notification Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form id="notificationSettingsForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Alert Thresholds</h6>
+                                <div class="mb-3">
+                                    <label for="powerThresholdWarning" class="form-label">Power Warning Threshold (Watts)</label>
+                                    <input type="number" class="form-control" id="powerThresholdWarning" min="0" step="50">
+                                    <small class="text-muted">You'll receive warnings when devices exceed this power usage</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="powerThresholdCritical" class="form-label">Power Critical Threshold (Watts)</label>
+                                    <input type="number" class="form-control" id="powerThresholdCritical" min="0" step="50">
+                                    <small class="text-muted">You'll receive critical alerts when devices exceed this power usage</small>
+                                </div>
+                                <h6 class="mt-4">Quiet Hours</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="quietHoursStart" class="form-label">Start Time</label>
+                                            <input type="time" class="form-control" id="quietHoursStart">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="quietHoursEnd" class="form-label">End Time</label>
+                                            <input type="time" class="form-control" id="quietHoursEnd">
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Only critical alerts will be sent during quiet hours</small>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Notification Types</h6>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="alertOnHighPower" checked>
+                                    <label class="form-check-label" for="alertOnHighPower">High Power Usage Alerts</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="alertOnDeviceOffline" checked>
+                                    <label class="form-check-label" for="alertOnDeviceOffline">Device Offline Alerts</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="alertOnScheduleFailure" checked>
+                                    <label class="form-check-label" for="alertOnScheduleFailure">Schedule Failure Alerts</label>
+                                </div>
+                                <h6 class="mt-4">Delivery Methods</h6>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="receiveSms" checked>
+                                    <label class="form-check-label" for="receiveSms">SMS Notifications</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="receiveEmail" checked>
+                                    <label class="form-check-label" for="receiveEmail">Email Notifications</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="receivePush" checked>
+                                    <label class="form-check-label" for="receivePush">In-App Notifications</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end mt-3">
+                            <button type="button" class="btn btn-primary" id="saveNotificationSettings">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load notification settings
+            fetch('/api/user/notification-settings', {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.settings) {
+                        const settings = data.settings;
+
+                        // Set form values
+                        document.getElementById('powerThresholdWarning').value = settings.power_threshold_warning;
+                        document.getElementById('powerThresholdCritical').value = settings.power_threshold_critical;
+                        document.getElementById('alertOnHighPower').checked = settings.alert_on_high_power;
+                        document.getElementById('alertOnDeviceOffline').checked = settings.alert_on_device_offline;
+                        document.getElementById('alertOnScheduleFailure').checked = settings.alert_on_schedule_failure;
+                        document.getElementById('receiveSms').checked = settings.receive_sms;
+                        document.getElementById('receiveEmail').checked = settings.receive_email;
+                        document.getElementById('receivePush').checked = settings.receive_push;
+
+                        if (settings.quiet_hours_start) {
+                            document.getElementById('quietHoursStart').value = settings.quiet_hours_start;
+                        }
+
+                        if (settings.quiet_hours_end) {
+                            document.getElementById('quietHoursEnd').value = settings.quiet_hours_end;
+                        }
+                    }
+                })
+                .catch(error => console.error('Error loading notification settings:', error));
+
+            // Save notification settings
+            document.getElementById('saveNotificationSettings').addEventListener('click', function() {
+                const settings = {
+                    power_threshold_warning: parseFloat(document.getElementById('powerThresholdWarning').value),
+                    power_threshold_critical: parseFloat(document.getElementById('powerThresholdCritical').value),
+                    alert_on_high_power: document.getElementById('alertOnHighPower').checked,
+                    alert_on_device_offline: document.getElementById('alertOnDeviceOffline').checked,
+                    alert_on_schedule_failure: document.getElementById('alertOnScheduleFailure').checked,
+                    receive_sms: document.getElementById('receiveSms').checked,
+                    receive_email: document.getElementById('receiveEmail').checked,
+                    receive_push: document.getElementById('receivePush').checked,
+                    quiet_hours_start: document.getElementById('quietHoursStart').value || null,
+                    quiet_hours_end: document.getElementById('quietHoursEnd').value || null
+                };
+
+                fetch('/api/user/notification-settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(settings)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving notification settings:', error);
+                        alert('Failed to save settings. Please try again.');
+                    });
+            });
+
+            // Mark notification as read
+            document.querySelectorAll('.mark-read').forEach(button => {
+                button.addEventListener('click', function() {
+                    const notificationId = this.getAttribute('data-notification-id');
+
+                    fetch(`/api/notifications/${notificationId}/read`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.message) {
+                                // Update UI
+                                const notificationItem = this.closest('.notification-item');
+                                notificationItem.classList.remove('notification-unread');
+                                this.remove();
+
+                                // Update unread count
+                                fetchUnreadCount();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error marking notification as read:', error);
+                            alert('Failed to mark notification as read. Please try again.');
+                        });
+                });
+            });
+
+            // Delete notification
+            document.querySelectorAll('.delete-notification').forEach(button => {
+                button.addEventListener('click', function() {
+                    const notificationId = this.getAttribute('data-notification-id');
+
+                    if (confirm('Are you sure you want to delete this notification?')) {
+                        fetch(`/api/notifications/${notificationId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('token')
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.message) {
+                                    // Remove notification from UI
+                                    this.closest('.notification-item').remove();
+
+                                    // Update unread count
+                                    fetchUnreadCount();
+
+                                    // Check if list is empty
+                                    const list = document.getElementById('notifications-list');
+                                    if (list.children.length === 0) {
+                                        list.innerHTML = `
+                                <div class="list-group-item text-center py-5">
+                                    <i class="fas fa-bell fa-3x mb-3 text-muted"></i>
+                                    <h5>No notifications found</h5>
+                                    <p class="text-muted">You're all caught up! We'll notify you when something needs your attention.</p>
+                                </div>
+                            `;
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error deleting notification:', error);
+                                alert('Failed to delete notification. Please try again.');
+                            });
+                    }
+                });
+            });
+
+            // Mark all as read
+            document.getElementById('markAllRead').addEventListener('click', function() {
+                fetch('/api/notifications/read-all', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            // Update UI
+                            document.querySelectorAll('.notification-unread').forEach(item => {
+                                item.classList.remove('notification-unread');
+                            });
+
+                            document.querySelectorAll('.mark-read').forEach(button => {
+                                button.remove();
+                            });
+
+                            // Update unread count
+                            fetchUnreadCount();
+
+                            alert(`${data.count} notifications marked as read.`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error marking all notifications as read:', error);
+                        alert('Failed to mark all notifications as read. Please try again.');
+                    });
+            });
+
+            // Clear all notifications
+            document.getElementById('clearAllNotifications').addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete all notifications? This cannot be undone.')) {
+                    fetch('/api/notifications/clear-all', {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.message) {
+                                // Update UI - clear the list
+                                const list = document.getElementById('notifications-list');
+                                list.innerHTML = `
+                        <div class="list-group-item text-center py-5">
+                            <i class="fas fa-bell fa-3x mb-3 text-muted"></i>
+                            <h5>No notifications found</h5>
+                            <p class="text-muted">You're all caught up! We'll notify you when something needs your attention.</p>
+                        </div>
+                    `;
+
+                                // Update unread count
+                                fetchUnreadCount();
+
+                                alert(`${data.count} notifications cleared.`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error clearing all notifications:', error);
+                            alert('Failed to clear notifications. Please try again.');
+                        });
+                }
+            });
+
+            // Filter notifications
+            document.querySelectorAll('.filter-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Update active state
+                    document.querySelectorAll('.filter-item').forEach(i => {
+                        i.classList.remove('active');
+                    });
+                    this.classList.add('active');
+
+                    const filter = this.getAttribute('data-filter');
+                    const notificationItems = document.querySelectorAll('.notification-item');
+
+                    notificationItems.forEach(notif => {
+                        if (filter === 'all') {
+                            notif.style.display = '';
+                        } else if (filter === 'unread') {
+                            notif.style.display = notif.classList.contains('notification-unread') ? '' : 'none';
+                        } else {
+                            notif.style.display = notif.classList.contains('notification-' + filter) ? '' : 'none';
+                        }
+                    });
+
+                    // Check if no items are visible
+                    let visibleCount = 0;
+                    notificationItems.forEach(notif => {
+                        if (notif.style.display !== 'none') {
+                            visibleCount++;
+                        }
+                    });
+
+                    if (visibleCount === 0) {
+                        const list = document.getElementById('notifications-list');
+
+                        // If there are notification items but none match the filter
+                        if (notificationItems.length > 0) {
+                            // Add a message about no matching notifications
+                            if (!document.querySelector('.no-matching-notifications')) {
+                                const noMatch = document.createElement('div');
+                                noMatch.className = 'list-group-item text-center py-5 no-matching-notifications';
+                                noMatch.innerHTML = `
+                            <i class="fas fa-filter fa-3x mb-3 text-muted"></i>
+                            <h5>No matching notifications</h5>
+                            <p class="text-muted">No notifications match the selected filter.</p>
+                        `;
+                                list.appendChild(noMatch);
+                            }
+                        }
+                    } else {
+                        // Remove the no matching notifications message if it exists
+                        const noMatch = document.querySelector('.no-matching-notifications');
+                        if (noMatch) {
+                            noMatch.remove();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

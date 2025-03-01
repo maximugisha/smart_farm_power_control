@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Smart Farm Power Control{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Account Settings</h1>
+            <p class="text-muted">Manage your account and notification preferences.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="list-group sticky-top" style="top: 20px;">
+                <a href="#profile-section" class="list-group-item list-group-item-action active">Profile</a>
+                <a href="#notification-section" class="list-group-item list-group-item-action">Notification Settings</a>
+                <a href="#password-section" class="list-group-item list-group-item-action">Change Password</a>
+                <a href="#mobile-section" class="list-group-item list-group-item-action">Mobile Access</a>
+                <a href="#system-section" class="list-group-item list-group-item-action">System Settings</a>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <!-- Profile Section -->
+            <div id="profile-section" class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Profile Information</h5>
+                </div>
+                <div class="card-body">
+                    <form id="profileForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fullName" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="fullName" value="{{ current_user.full_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" value="{{ current_user.username }}" readonly>
+                                <small class="text-muted">Username cannot be changed</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" value="{{ current_user.email }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phoneNumber" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phoneNumber" value="{{ current_user.phone_number }}">
+                                <small class="text-muted">Used for SMS notifications</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="farmName" class="form-label">Farm Name</label>
+                            <input type="text" class="form-control" id="farmName" value="{{ current_user.farm_name }}">
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-primary" id="saveProfile">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Notification Settings Section -->
+            <div id="notification-section" class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Notification Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form id="notificationForm">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h6>Power Thresholds</h6>
+                                <div class="mb-3">
+                                    <label for="powerWarningThreshold" class="form-label">Warning Threshold (Watts)</label>
+                                    <input type="number" class="form-control" id="powerWarningThreshold" value="{{ notification_settings.power_threshold_warning }}">
+                                    <small class="text-muted">Trigger warning when power exceeds this value</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="powerCriticalThreshold" class="form-label">Critical Threshold (Watts)</label>
+                                    <input type="number" class="form-control" id="powerCriticalThreshold" value="{{ notification_settings.power_threshold_critical }}">
+                                    <small class="text-muted">Trigger critical alert when power exceeds this value</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Quiet Hours</h6>
+                                <div class="row">
+                                    <div class="col-6 mb-3">
+                                        <label for="quietHoursStart" class="form-label">Start Time</label>
+                                        <input type="time" class="form-control" id="quietHoursStart" value="{{ notification_settings.quiet_hours_start.strftime('%H:%M') if notification_settings.quiet_hours_start else '' }}">
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label for="quietHoursEnd" class="form-label">End Time</label>
+                                        <input type="time" class="form-control" id="quietHoursEnd" value="{{ notification_settings.quiet_hours_end.strftime('%H:%M') if notification_settings.quiet_hours_end else '' }}">
+                                    </div>
+                                </div>
+                                <small class="text-muted">Only critical alerts will be sent during quiet hours</small>
+                            </div>
+                        </div>
+
+                        <h6>Notification Types</h6>
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="alertHighPower" {% if notification_settings.alert_on_high_power %}checked{% endif %}>
+                                    <label class="form-check-label" for="alertHighPower">High Power Usage</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="alertDeviceOffline" {% if notification_settings.alert_on_device_offline %}checked{% endif %}>
+                                    <label class="form-check-label" for="alertDeviceOffline">Device Offline</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="alertScheduleFailure" {% if notification_settings.alert_on_schedule_failure %}checked{% endif %}>
+                                    <label class="form-check-label" for="alertScheduleFailure">Schedule Failures</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6>Delivery Methods</h6>
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="receiveSms" {% if notification_settings.receive_sms %}checked{% endif %}>
+                                    <label class="form-check-label" for="receiveSms">SMS Notifications</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="receiveEmail" {% if notification_settings.receive_email %}checked{% endif %}>
+                                    <label class="form-check-label" for="receiveEmail">Email Notifications</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="receivePush" {% if notification_settings.receive_push %}checked{% endif %}>
+                                    <label class="form-check-label" for="receivePush">In-App Notifications</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-primary" id="saveNotifications">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Change Password Section -->
+            <div id="password-section" class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Change Password</h5>
+                </div>
+                <div class="card-body">
+                    <form id="passwordForm">
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="currentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                            <small class="text-muted">Password must be at least 8 characters long</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-primary" id="changePassword">Change Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Mobile Access Section -->
+            <div id="mobile-section" class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Mobile Access</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>SMS Commands</h6>
+                            <p class="text-muted">Control your devices via SMS messages</p>
+                            <ul class="list-group mb-3">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <code>FARM STATUS</code>
+                                    <span>Get power usage summary</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <code>FARM ON [device_id]</code>
+                                    <span>Turn on a device</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <code>FARM OFF [device_id]</code>
+                                    <span>Turn off a device</span>
+                                </li>
+                            </ul>
+                            <p>Send SMS commands to: <strong>+1234567890</strong></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>USSD Code</h6>
+                            <p class="text-muted">Dial this code to access the USSD menu</p>
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">*123#</h5>
+                                    <p class="card-text">Dial from your registered phone number</p>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enableUssd" checked>
+                                <label class="form-check-label" for="enableUssd">Enable USSD Access</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>API Access</h6>
+                            <p class="text-muted">Use this API token to access the system from external applications</p>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" id="apiToken" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." readonly>
+                                <button class="btn btn-outline-secondary" type="button" id="copyToken">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                                <button class="btn btn-outline-primary" type="button" id="regenerateToken">
+                                    <i class="fas fa-sync-alt"></i> Regenerate
+                                </button>
+                            </div>
+                            <p class="small text-danger">Keep this token secure. Anyone with this token can control your farm devices.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Settings Section -->
+            <div id="system-section" class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">System Settings</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Energy Rate</h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="energyRate" class="form-label">Rate per kWh</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="energyRate" value="0.15" step="0.01">
+                                </div>
+                                <small class="text-muted">Used for cost calculations</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="useTimeOfDay">
+                                <label class="form-check-label" for="useTimeOfDay">Use Time-of-Day Pricing</label>
+                            </div>
+                            <div id="timeOfDaySettings" style="display: none;">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label for="peakRate" class="form-label">Peak Rate ($/kWh)</label>
+                                            <input type="number" class="form-control" id="peakRate" value="0.20" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label for="offPeakRate" class="form-label">Off-Peak Rate ($/kWh)</label>
+                                            <input type="number" class="form-control" id="offPeakRate" value="0.10" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label for="peakStart" class="form-label">Peak Hours Start</label>
+                                            <input type="time" class="form-control" id="peakStart" value="14:00">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label for="peakEnd" class="form-label">Peak Hours End</label>
+                                            <input type="time" class="form-control" id="peakEnd" value="20:00">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6>Data Retention</h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="retentionPeriod" class="form-label">Keep Detailed Data For</label>
+                                <select class="form-select" id="retentionPeriod">
+                                    <option value="30">30 days</option>
+                                    <option value="60">60 days</option>
+                                    <option value="90" selected>90 days</option>
+                                    <option value="180">180 days</option>
+                                    <option value="365">1 year</option>
+                                </select>
+                                <small class="text-muted">Older data will be aggregated into daily summaries</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="readingInterval" class="form-label">Sensor Reading Interval</label>
+                                <select class="form-select" id="readingInterval">
+                                    <option value="30">30 seconds</option>
+                                    <option value="60" selected>1 minute</option>
+                                    <option value="300">5 minutes</option>
+                                    <option value="600">10 minutes</option>
+                                    <option value="1800">30 minutes</option>
+                                </select>
+                                <small class="text-muted">How often to record power readings</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" id="saveSystemSettings">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scroll to sections
+            document.querySelectorAll('.list-group-item').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Update active state
+                    document.querySelectorAll('.list-group-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    this.classList.add('active');
+
+                    // Scroll to section
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 20,
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Time-of-day pricing toggle
+            document.getElementById('useTimeOfDay').addEventListener('change', function() {
+                const timeOfDaySettings = document.getElementById('timeOfDaySettings');
+                timeOfDaySettings.style.display = this.checked ? 'block' : 'none';
+            });
+
+            // Copy API token
+            document.getElementById('copyToken').addEventListener('click', function() {
+                const tokenInput = document.getElementById('apiToken');
+                tokenInput.select();
+                document.execCommand('copy');
+                alert('API token copied to clipboard!');
+            });
+
+            // Save profile information
+            document.getElementById('saveProfile').addEventListener('click', function() {
+                const profileData = {
+                    full_name: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    phone_number: document.getElementById('phoneNumber').value,
+                    farm_name: document.getElementById('farmName').value
+                };
+
+                fetch('/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(profileData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+
+                        alert('Profile updated successfully!');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to update profile. Please try again.');
+                    });
+            });
+
+            // Save notification settings
+            document.getElementById('saveNotifications').addEventListener('click', function() {
+                const notificationData = {
+                    power_threshold_warning: parseFloat(document.getElementById('powerWarningThreshold').value),
+                    power_threshold_critical: parseFloat(document.getElementById('powerCriticalThreshold').value),
+                    alert_on_high_power: document.getElementById('alertHighPower').checked,
+                    alert_on_device_offline: document.getElementById('alertDeviceOffline').checked,
+                    alert_on_schedule_failure: document.getElementById('alertScheduleFailure').checked,
+                    receive_sms: document.getElementById('receiveSms').checked,
+                    receive_email: document.getElementById('receiveEmail').checked,
+                    receive_push: document.getElementById('receivePush').checked,
+                    quiet_hours_start: document.getElementById('quietHoursStart').value || null,
+                    quiet_hours_end: document.getElementById('quietHoursEnd').value || null
+                };
+
+                fetch('/api/user/notification-settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(notificationData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+
+                        alert('Notification settings updated successfully!');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to update notification settings. Please try again.');
+                    });
+            });
+
+            // Change password
+            document.getElementById('changePassword').addEventListener('click', function() {
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                    alert('Please fill in all password fields.');
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    alert('New passwords do not match.');
+                    return;
+                }
+
+                if (newPassword.length < 8) {
+                    alert('New password must be at least 8 characters long.');
+                    return;
+                }
+
+                const passwordData = {
+                    current_password: currentPassword,
+                    new_password: newPassword
+                };
+
+                fetch('/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(passwordData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+
+                        alert('Password changed successfully!');
+
+                        // Clear password fields
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to change password. Please try again.');
+                    });
+            });
+
+            // Regenerate API token
+            document.getElementById('regenerateToken').addEventListener('click', function() {
+                if (confirm('Are you sure you want to regenerate your API token? All existing API connections will stop working.')) {
+                    fetch('/api/user/regenerate-token', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert(data.error);
+                                return;
+                            }
+
+                            document.getElementById('apiToken').value = data.token;
+                            alert('API token regenerated successfully!');
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to regenerate API token. Please try again.');
+                        });
+                }
+            });
+
+            // Save system settings
+            document.getElementById('saveSystemSettings').addEventListener('click', function() {
+                const useTimeOfDay = document.getElementById('useTimeOfDay').checked;
+
+                const systemData = {
+                    energy_rate: parseFloat(document.getElementById('energyRate').value),
+                    is_time_of_use: useTimeOfDay,
+                    peak_rate: useTimeOfDay ? parseFloat(document.getElementById('peakRate').value) : null,
+                    off_peak_rate: useTimeOfDay ? parseFloat(document.getElementById('offPeakRate').value) : null,
+                    peak_start_time: useTimeOfDay ? document.getElementById('peakStart').value : null,
+                    peak_end_time: useTimeOfDay ? document.getElementById('peakEnd').value : null,
+                    retention_period: parseInt(document.getElementById('retentionPeriod').value),
+                    reading_interval: parseInt(document.getElementById('readingInterval').value)
+                };
+
+                fetch('/api/system/settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(systemData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+
+                        alert('System settings updated successfully!');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to update system settings. Please try again.');
+                    });
+            });
+        });
+    </script>
+{% endblock %}

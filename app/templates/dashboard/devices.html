@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Devices - Smart Farm Power Control{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Devices</h1>
+            <p class="text-muted">Manage and control your farm's power devices.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+                <i class="fas fa-plus"></i> Add Device
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Your Devices</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Type</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Power</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for device in devices %}
+                                <tr id="device-row-{{ device.id }}">
+                                    <td>
+                                        <strong>{{ device.name }}</strong>
+                                        <small class="d-block text-muted">ID: {{ device.device_id }}</small>
+                                    </td>
+                                    <td>{{ device.device_type }}</td>
+                                    <td>{{ device.location }}</td>
+                                    <td>
+                                    <span class="badge {% if device.status == 'online' %}bg-success{% elif device.status == 'offline' %}bg-secondary{% else %}bg-warning{% endif %}">
+                                        {{ device.status }}
+                                    </span>
+                                        <small class="d-block mt-1">
+                                            {% if device.power_state %}
+                                                <span class="text-success">ON</span>
+                                            {% else %}
+                                                <span class="text-secondary">OFF</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="power-usage">{{ "%.1f"|format(device.current_power) }} W</span>
+                                        <small class="d-block text-muted">Max: {{ "%.1f"|format(device.max_power) }} W</small>
+                                    </td>
+                                    <td>
+                                        {% if device.last_updated %}
+                                            <span>{{ device.last_updated.strftime('%Y-%m-%d %H:%M') }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Never</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm {% if device.power_state %}btn-danger{% else %}btn-success{% endif %} toggle-power"
+                                                    data-device-id="{{ device.id }}"
+                                                    data-current-state="{{ 'on' if device.power_state else 'off' }}">
+                                                {% if device.power_state %}
+                                                    <i class="fas fa-power-off"></i> Turn Off
+                                                {% else %}
+                                                    <i class="fas fa-power-off"></i> Turn On
+                                                {% endif %}
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-primary edit-device" data-bs-toggle="modal" data-bs-target="#editDeviceModal" data-device-id="{{ device.id }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger delete-device" data-device-id="{{ device.id }}" data-device-name="{{ device.name }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="empty-state">
+                                            <i class="fas fa-plug fa-3x mb-3 text-muted"></i>
+                                            <h5>No devices found</h5>
+                                            <p class="text-muted">Start by adding your first device.</p>
+                                            <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+                                                <i class="fas fa-plus"></i> Add Device
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div class="modal fade" id="addDeviceModal" tabindex="-1" aria-labelledby="addDeviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addDeviceModalLabel">Add New Device</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDeviceForm">
+                        <div class="mb-3">
+                            <label for="deviceName" class="form-label">Device Name</label>
+                            <input type="text" class="form-control" id="deviceName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceId" class="form-label">Device ID</label>
+                            <input type="text" class="form-control" id="deviceId" required>
+                            <small class="text-muted">Unique identifier for IoT device</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceType" class="form-label">Device Type</label>
+                            <select class="form-select" id="deviceType" required>
+                                <option value="">Select type...</option>
+                                {% for type in device_types %}
+                                    <option value="{{ type.name }}">{{ type.name }}</option>
+                                {% else %}
+                                    <option value="irrigation">Irrigation</option>
+                                    <option value="lighting">Lighting</option>
+                                    <option value="heating">Heating</option>
+                                    <option value="cooling">Cooling</option>
+                                    <option value="ventilation">Ventilation</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="monitoring">Monitoring</option>
+                                    <option value="other">Other</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceLocation" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="deviceLocation">
+                        </div>
+                        <div class="mb-3">
+                            <label for="maxPower" class="form-label">Maximum Power (Watts)</label>
+                            <input type="number" class="form-control" id="maxPower" required min="0" step="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="deviceDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveNewDevice">Save Device</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Device Modal -->
+    <div class="modal fade" id="editDeviceModal" tabindex="-1" aria-labelledby="editDeviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editDeviceModalLabel">Edit Device</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDeviceForm">
+                        <input type="hidden" id="editDeviceId">
+                        <div class="mb-3">
+                            <label for="editDeviceName" class="form-label">Device Name</label>
+                            <input type="text" class="form-control" id="editDeviceName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDeviceType" class="form-label">Device Type</label>
+                            <select class="form-select" id="editDeviceType" required>
+                                <option value="">Select type...</option>
+                                {% for type in device_types %}
+                                    <option value="{{ type.name }}">{{ type.name }}</option>
+                                {% else %}
+                                    <option value="irrigation">Irrigation</option>
+                                    <option value="lighting">Lighting</option>
+                                    <option value="heating">Heating</option>
+                                    <option value="cooling">Cooling</option>
+                                    <option value="ventilation">Ventilation</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="monitoring">Monitoring</option>
+                                    <option value="other">Other</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDeviceLocation" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="editDeviceLocation">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMaxPower" class="form-label">Maximum Power (Watts)</label>
+                            <input type="number" class="form-control" id="editMaxPower" required min="0" step="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDeviceDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editDeviceDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="updateDevice">Update Device</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Device Confirmation Modal -->
+    <div class="modal fade" id="deleteDeviceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the device "<span id="deleteDeviceName"></span>"?</p>
+                    <p class="text-danger">This action cannot be undone. All power readings and schedules for this device will also be deleted.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteDevice">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle power state
+            document.querySelectorAll('.toggle-power').forEach(button => {
+                button.addEventListener('click', function() {
+                    const deviceId = this.getAttribute('data-device-id');
+                    const currentState = this.getAttribute('data-current-state');
+                    const newState = currentState === 'on' ? 'off' : 'on';
+
+                    this.disabled = true;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                    // Send control command to the server
+                    fetch(`/dashboard/api/device/${deviceId}/control`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            command: 'power',
+                            value: newState === 'on'
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert(data.error);
+                                return;
+                            }
+
+                            // Update button
+                            this.setAttribute('data-current-state', newState);
+                            if (newState === 'on') {
+                                this.classList.remove('btn-success');
+                                this.classList.add('btn-danger');
+                                this.innerHTML = '<i class="fas fa-power-off"></i> Turn Off';
+                            } else {
+                                this.classList.remove('btn-danger');
+                                this.classList.add('btn-success');
+                                this.innerHTML = '<i class="fas fa-power-off"></i> Turn On';
+                            }
+
+                            // Update device status in the table
+                            const statusCell = document.querySelector(`#device-row-${deviceId} td:nth-child(4) span.badge`);
+                            if (statusCell) {
+                                statusCell.textContent = data.status;
+                                statusCell.className = `badge ${data.status === 'online' ? 'bg-success' : (data.status === 'offline' ? 'bg-secondary' : 'bg-warning')}`;
+                            }
+
+                            const powerStateCell = document.querySelector(`#device-row-${deviceId} td:nth-child(4) small span`);
+                            if (powerStateCell) {
+                                if (newState === 'on') {
+                                    powerStateCell.textContent = 'ON';
+                                    powerStateCell.className = 'text-success';
+                                } else {
+                                    powerStateCell.textContent = 'OFF';
+                                    powerStateCell.className = 'text-secondary';
+                                }
+                            }
+
+                            this.disabled = false;
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to control device. Please try again.');
+                            this.disabled = false;
+                            this.innerHTML = `<i class="fas fa-power-off"></i> Turn ${currentState === 'on' ? 'Off' : 'On'}`;
+                        });
+                });
+            });
+
+            // Add new device
+            document.getElementById('saveNewDevice').addEventListener('click', function() {
+                const form = document.getElementById('addDeviceForm');
+
+                // Basic validation
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                // Get form data
+                const deviceData = {
+                    name: document.getElementById('deviceName').value,
+                    device_id: document.getElementById('deviceId').value,
+                    device_type: document.getElementById('deviceType').value,
+                    location: document.getElementById('deviceLocation').value,
+                    max_power: parseFloat(document.getElementById('maxPower').value),
+                    description: document.getElementById('deviceDescription').value
+                };
+
+                // Send API request to create device
+                fetch('/api/devices', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(deviceData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+
+                        // Success, refresh the page
+                        alert('Device added successfully!');
+                        location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to add device. Please try again.');
+                    });
+            });
+
+            // Handle edit device button clicks
+            document.querySelectorAll('.edit-device').forEach(button => {
+                button.addEventListener('click', function() {
+                    const deviceId = this.getAttribute('data-device-id');
+
+                    // Fetch device details
+                    fetch(`/api/devices/${deviceId}`, {
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert(data.error);
+                                return;
+                            }
+
+                            const device = data.device;
+
+                            // Populate form fields
+                            document.getElementById('editDeviceId').value = device.id;
+                            document.getElementById('editDeviceName').value = device.name;
+                            document.getElementById('editDeviceType').value = device.device_type;
+                            document.getElementById('editDeviceLocation').value = device.location;
+                            document.getElementById('editMaxPower').value = device.max_power;
+                            document.getElementById('editDeviceDescription').value = device.description;
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to load device details. Please try again.');
+                        });
+                });
+            });
+
+            // Update device
+            document.getElementById('updateDevice').addEventListener('click', function() {
+                const form = document.getElementById('editDeviceForm');
+
+                // Basic validation
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const deviceId = document.getElementById('editDeviceId').value;
+
+                // Get form data
+                const deviceData = {
+                    name: document.getElementById('editDeviceName').value,
+                    device_type: document.getElementById('editDeviceType').value,
+                    location: document.getElementById('editDeviceLocation').value,
+                    max_power: parseFloat(document.getElementById('editMaxPower').value),
+                    description: document.getElementById('editDeviceDescription').value
+                };
+
+                // Send API request to update device
+                fetch(`/api/devices/${deviceId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(deviceData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+
+                        // Success, refresh the page
+                        alert('Device updated successfully!');
+                        location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to update device. Please try again.');
+                    });
+            });
+
+            // Handle delete device button clicks
+            document.querySelectorAll('.delete-device').forEach(button => {
+                button.addEventListener('click', function() {
+                    const deviceId = this.getAttribute('data-device-id');
+                    const deviceName = this.getAttribute('data-device-name');
+
+                    // Populate confirmation modal
+                    document.getElementById('deleteDeviceName').textContent = deviceName;
+
+                    // Setup confirm button
+                    document.getElementById('confirmDeleteDevice').onclick = function() {
+                        // Send API request to delete device
+                        fetch(`/api/devices/${deviceId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('token')
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.error) {
+                                    alert(data.error);
+                                    return;
+                                }
+
+                                // Success, refresh the page
+                                alert('Device deleted successfully!');
+                                location.reload();
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Failed to delete device. Please try again.');
+                            });
+                    };
+
+                    // Show the confirmation modal
+                    const deleteModal = new bootstrap.Modal(document.getElementById('deleteDeviceModal'));
+                    deleteModal.show();
+                });
+            });
+        });
+    </script>
+{% endblock %}

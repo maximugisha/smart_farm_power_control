@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - Smart Farm Power Control{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center py-5">
+        <div class="col-md-8 col-lg-6 text-center">
+            <div class="mb-4">
+                <i class="fas fa-exclamation-triangle fa-6x text-danger"></i>
+            </div>
+            <h1 class="display-4 fw-bold mb-3">500</h1>
+            <h2 class="mb-4">Server Error</h2>
+            <p class="lead text-muted mb-4">Something went wrong on our end. Our team has been notified and is working to fix the issue.</p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary px-4">
+                    <i class="fas fa-home me-2"></i>Return Home
+                </a>
+                <button onclick="location.reload()" class="btn btn-outline-secondary px-4">
+                    <i class="fas fa-sync-alt me-2"></i>Try Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title">Need Help?</h5>
+                    <p class="card-text">If the problem persists, please try one of the following:</p>
+                    <ul class="mb-0">
+                        <li>Refresh the page</li>
+                        <li>Clear your browser cache and cookies</li>
+                        <li>Try again in a few minutes</li>
+                        <li>Contact our support team at <a href="mailto:support@smartfarmpower.com">support@smartfarmpower.com</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title">Alternative Access Methods</h5>
+                    <p class="card-text">You can still control your farm devices even if the web dashboard is unavailable:</p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-sms fa-2x mb-2 text-primary"></i>
+                                    <h6>SMS Control</h6>
+                                    <p class="small mb-0">Send SMS commands to:<br>+1234567890</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-phone fa-2x mb-2 text-primary"></i>
+                                    <h6>USSD Menu</h6>
+                                    <p class="small mb-0">Dial:<br>*123#</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Logging Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Log the error to our monitoring system
+            const errorData = {
+                url: window.location.href,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                errorType: '500 Server Error'
+            };
+
+            // In a real app, send this data to an error logging endpoint
+            console.error('Server error encountered:', errorData);
+        });
+    </script>
+{% endblock %}

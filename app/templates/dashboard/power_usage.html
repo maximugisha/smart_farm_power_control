@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}Power Usage - Smart Farm Power Control{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Power Usage Analytics</h1>
+            <p class="text-muted">Analyze your farm's power consumption patterns and costs.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('dashboard.power_usage', period='day') }}" class="btn btn-outline-primary {{ 'active' if period == 'day' else '' }}">Day</a>
+                <a href="{{ url_for('dashboard.power_usage', period='week') }}" class="btn btn-outline-primary {{ 'active' if period == 'week' else '' }}">Week</a>
+                <a href="{{ url_for('dashboard.power_usage', period='month') }}" class="btn btn-outline-primary {{ 'active' if period == 'month' else '' }}">Month</a>
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#customDateModal">Custom</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Energy</h5>
+                    <div class="display-4 fw-bold text-primary">{{ "%.2f"|format(total_energy) }}</div>
+                    <p class="text-muted">kWh for selected period</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Estimated Cost</h5>
+                    <div class="display-4 fw-bold text-danger">${{ "%.2f"|format(total_cost) }}</div>
+                    <p class="text-muted">for selected period</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Daily Average</h5>
+                    <div class="display-4 fw-bold text-success">{{ "%.2f"|format(avg_daily_energy) }}</div>
+                    <p class="text-muted">kWh per day</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Power Usage Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Energy Consumption</h5>
+                    <div class="date-range">
+                        {{ start_date }} to {{ end_date }}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="energyChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost and Device Comparison -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Cost Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="costChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Device Comparison</h5>
+                    <div class="form-check form-check-inline mb-0">
+                        <input class="form-check-input" type="checkbox" id="showAllDevices">
+                        <label class="form-check-label small" for="showAllDevices">Show All Devices</label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="deviceComparisonChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Energy Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Device Energy Consumption</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="exportCSV">
+                        <i class="fas fa-download"></i> Export CSV
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="deviceEnergyTable">
+                            <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Type</th>
+                                <th>Location</th>
+                                <th>Total Energy</th>
+                                <th>Est. Cost</th>
+                                <th>% of Total</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for device in devices %}
+                                {% set device_data = None %}
+                                {% for d in device_data|fromjson %}
+                                    {% if d.id == device.id %}
+                                        {% set device_data = d %}
+                                    {% endif %}
+                                {% endfor %}
+
+                                <tr>
+                                    <td>{{ device.name }}</td>
+                                    <td>{{ device.device_type }}</td>
+                                    <td>{{ device.location }}</td>
+                                    <td>
+                                        {% if device_data %}
+                                            {{ "%.2f"|format(device_data.total_energy) }} kWh
+                                        {% else %}
+                                            0.00 kWh
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if device_data and device_data.total_energy %}
+                                            ${{ "%.2f"|format(device_data.total_energy * 0.15) }}
+                                        {% else %}
+                                            $0.00
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if device_data and device_data.total_energy and total_energy > 0 %}
+                                            {{ "%.1f"|format(device_data.total_energy / total_energy * 100) }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary view-device-details" data-device-id="{{ device.id }}">
+                                            <i class="fas fa-chart-line"></i> Details
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">No devices found.</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Date Range Modal -->
+    <div class="modal fade" id="customDateModal" tabindex="-1" aria-labelledby="customDateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customDateModalLabel">Custom Date Range</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="customDateForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="startDate" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="startDate" name="start_date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="endDate" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="endDate" name="end_date" required>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="applyCustomDate">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Details Modal -->
+    <div class="modal fade" id="deviceDetailsModal" tabindex="-1" aria-labelledby="deviceDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deviceDetailsModalLabel">Device Power Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4" id="deviceDetailsLoader">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading device details...</p>
+                    </div>
+                    <div id="deviceDetailsContent" style="display: none;">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5 id="deviceDetailsName">Device Name</h5>
+                                <p class="text-muted" id="deviceDetailsInfo">Type | Location</p>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-primary btn-sm device-period-btn active" data-period="day">Day</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm device-period-btn" data-period="week">Week</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm device-period-btn" data-period="month">Month</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Total Energy</h6>
+                                        <div class="h3 text-primary" id="deviceDetailsTotalEnergy">0 kWh</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Peak Power</h6>
+                                        <div class="h3 text-danger" id="deviceDetailsPeakPower">0 W</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Average Power</h6>
+                                        <div class="h3 text-success" id="deviceDetailsAvgPower">0 W</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">Power Usage</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="deviceDetailsChart" height="250"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="deviceDetailsError" class="text-center py-4" style="display: none;">
+                        <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                        <h5>Error Loading Data</h5>
+                        <p class="text-muted">Failed to load device details. Please try again.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#" id="deviceDetailsViewDevice" class="btn btn-primary">View Device</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Energy consumption chart
+            const energyChartCtx = document.getElementById('energyChart').getContext('2d');
+            const dates = {{ dates|safe }};
+            const farmEnergy = {{ farm_energy|safe }};
+
+            const energyChartData = {
+                labels: dates,
+                datasets: [{
+                    label: 'Energy (kWh)',
+                    data: farmEnergy,
+                    backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                    borderColor: '#3498db',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            };
+
+            const energyChart = createEnergyConsumptionChart('energyChart', energyChartData);
+
+            // Cost analysis chart
+            const costChartCtx = document.getElementById('costChart').getContext('2d');
+            const farmCost = {{ farm_cost|safe }};
+
+            const costChartData = {
+                labels: dates,
+                datasets: [{
+                    label: 'Cost ($)',
+                    data: farmCost,
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    borderColor: '#e74c3c',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            };
+
+            const costChart = createCostAnalysisChart('costChart', costChartData);
+
+            // Device comparison chart
+            const deviceData = {{ device_data|safe }};
+
+            // Sort devices by total energy (descending)
+            deviceData.sort((a, b) => b.total_energy - a.total_energy);
+
+            // By default, show only top 5 devices
+            let devicesToShow = 5;
+            let deviceLabels = deviceData.slice(0, devicesToShow).map(d => d.name);
+            let deviceEnergy = deviceData.slice(0, devicesToShow).map(d => d.total_energy);
+
+            const deviceChartData = {
+                labels: deviceLabels,
+                datasets: [{
+                    label: 'Energy (kWh)',
+                    data: deviceEnergy,
+                    backgroundColor: generateChartColors(devicesToShow),
+                    borderWidth: 1
+                }]
+            };
+
+            const deviceChart = createEnergyConsumptionChart('deviceComparisonChart', deviceChartData, {
+                indexAxis: 'y'
+            });
+
+            // Toggle between showing top 5 or all devices
+            document.getElementById('showAllDevices').addEventListener('change', function() {
+                if (this.checked) {
+                    // Show all devices
+                    deviceLabels = deviceData.map(d => d.name);
+                    deviceEnergy = deviceData.map(d => d.total_energy);
+                } else {
+                    // Show only top 5 devices
+                    deviceLabels = deviceData.slice(0, 5).map(d => d.name);
+                    deviceEnergy = deviceData.slice(0, 5).map(d => d.total_energy);
+                }
+
+                deviceChart.data.labels = deviceLabels;
+                deviceChart.data.datasets[0].data = deviceEnergy;
+                deviceChart.data.datasets[0].backgroundColor = generateChartColors(deviceLabels.length);
+                deviceChart.update();
+            });
+
+            // Apply custom date range
+            document.getElementById('applyCustomDate').addEventListener('click', function() {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                if (!startDate || !endDate) {
+                    alert('Please select both start and end dates.');
+                    return;
+                }
+
+                // Redirect to custom date range view
+                window.location.href = `{{ url_for('dashboard.power_usage') }}?period=custom&start_date=${startDate}&end_date=${endDate}`;
+            });
+
+            // Initialize custom date inputs with current range
+            document.getElementById('startDate').value = '{{ start_date }}';
+            document.getElementById('endDate').value = '{{ end_date }}';
+
+            // Export to CSV
+            document.getElementById('exportCSV').addEventListener('click', function() {
+                // Get table data
+                const table = document.getElementById('deviceEnergyTable');
+                const rows = table.querySelectorAll('tbody tr');
+
+                // Prepare CSV content
+                let csvContent = 'Device,Type,Location,Total Energy (kWh),Estimated Cost ($),Percentage of Total\n';
+
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 6) {
+                        const deviceName = cells[0].textContent.trim();
+                        const deviceType = cells[1].textContent.trim();
+                        const location = cells[2].textContent.trim();
+                        const energy = cells[3].textContent.trim();
+                        const cost = cells[4].textContent.trim();
+                        const percentage = cells[5].textContent.trim();
+
+                        csvContent += `"${deviceName}","${deviceType}","${location}","${energy}","${cost}","${percentage}"\n`;
+                    }
+                });
+
+                // Create downloadable link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `smart_farm_power_usage_${new Date().toISOString().slice(0, 10)}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Device details modal
+            const deviceDetailsModal = document.getElementById('deviceDetailsModal');
+            const deviceDetailsChart = { instance: null };
+            let currentDeviceId = null;
+            let currentDevicePeriod = 'day';
+
+            document.querySelectorAll('.view-device-details').forEach(button => {
+                button.addEventListener('click', function() {
+                    const deviceId = this.getAttribute('data-device-id');
+                    currentDeviceId = deviceId;
+
+                    // Reset modal state
+                    document.getElementById('deviceDetailsLoader').style.display = 'block';
+                    document.getElementById('deviceDetailsContent').style.display = 'none';
+                    document.getElementById('deviceDetailsError').style.display = 'none';
+
+                    // Update View Device link
+                    document.getElementById('deviceDetailsViewDevice').href = `{{ url_for('dashboard.devices') }}#device-${deviceId}`;
+
+                    // Show modal
+                    const modal = new bootstrap.Modal(deviceDetailsModal);
+                    modal.show();
+
+                    // Fetch device details
+                    loadDeviceDetails(deviceId, currentDevicePeriod);
+                });
+            });
+
+            // Period buttons in device details modal
+            document.querySelectorAll('.device-period-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    // Update active state
+                    document.querySelectorAll('.device-period-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    this.classList.add('active');
+
+                    // Get selected period
+                    currentDevicePeriod = this.getAttribute('data-period');
+
+                    // Reload device details
+                    loadDeviceDetails(currentDeviceId, currentDevicePeriod);
+                });
+            });
+
+            function loadDeviceDetails(deviceId, period) {
+                // Show loader
+                document.getElementById('deviceDetailsLoader').style.display = 'block';
+                document.getElementById('deviceDetailsContent').style.display = 'none';
+                document.getElementById('deviceDetailsError').style.display = 'none';
+
+                // Fetch device power stats
+                fetch(`/api/power/devices/${deviceId}?period=${period}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch device details');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Fetch device info
+                        return fetch(`/api/devices/${deviceId}`, {
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('token')
+                            }
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Failed to fetch device info');
+                                }
+                                return response.json();
+                            })
+                            .then(deviceInfo => {
+                                return { stats: data, device: deviceInfo.device };
+                            });
+                    })
+                    .then(({ stats, device }) => {
+                        // Update device info
+                        document.getElementById('deviceDetailsName').textContent = device.name;
+                        document.getElementById('deviceDetailsInfo').textContent = `${device.device_type} | ${device.location || 'N/A'}`;
+
+                        // Update summary stats
+                        document.getElementById('deviceDetailsTotalEnergy').textContent = `${stats.total_energy.toFixed(2)} kWh`;
+                        document.getElementById('deviceDetailsPeakPower').textContent = `${stats.max_power.toFixed(1)} W`;
+                        document.getElementById('deviceDetailsAvgPower').textContent = `${stats.average_power.toFixed(1)} W`;
+
+                        // Create or update chart
+                        if (deviceDetailsChart.instance) {
+                            deviceDetailsChart.instance.destroy();
+                        }
+
+                        // Prepare chart data
+                        const timestamps = stats.readings.map(r => {
+                            const date = new Date(r.timestamp);
+                            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        });
+
+                        const powerValues = stats.readings.map(r => r.power);
+
+                        const chartData = {
+                            labels: timestamps,
+                            datasets: [{
+                                label: 'Power (W)',
+                                data: powerValues,
+                                borderColor: '#3498db',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        };
+
+                        deviceDetailsChart.instance = createPowerUsageChart('deviceDetailsChart', chartData);
+
+                        // Show content
+                        document.getElementById('deviceDetailsLoader').style.display = 'none';
+                        document.getElementById('deviceDetailsContent').style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Error loading device details:', error);
+                        document.getElementById('deviceDetailsLoader').style.display = 'none';
+                        document.getElementById('deviceDetailsError').style.display = 'block';
+                    });
+            }
+        });
+    </script>
+{% endblock %}

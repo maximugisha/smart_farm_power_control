@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Smart Farm Power Control{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center py-5">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0">Login to Your Account</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" required autofocus>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">Remember me</label>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                        </div>
+                    </form>
+                    <div class="mt-3 text-center">
+                        <a href="{{ url_for('auth.forgot_password') }}" class="text-decoration-none">Forgot your password?</a>
+                    </div>
+                    <hr class="my-4">
+                    <div class="text-center">
+                        <p class="mb-2">Don't have an account?</p>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary">Create Account</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alternative Login Methods -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body p-4">
+                    <h5 class="text-center mb-3">Alternative Login Methods</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="d-grid">
+                                <a href="#" class="btn btn-outline-dark">
+                                    <i class="fas fa-mobile-alt me-2"></i> SMS Login
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-grid">
+                                <a href="#" class="btn btn-outline-dark">
+                                    <i class="fas fa-qrcode me-2"></i> QR Code
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
